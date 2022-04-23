@@ -5,8 +5,8 @@ import os
 from termcolor import cprint
 import pybullet_planning as pp
 import numpy as np
-import Lab
 import copy
+import move
 
 HERE = os.path.dirname(__file__)
 
@@ -35,27 +35,27 @@ def main():
     self_collision_links = pp.get_disabled_collisions(robot, robot_self_collision_disabled_link_names)
 
     manager = VoxelManager()
-    positions = [(0,1,1), (0,2,1), (0,1,2)]
+    positions = [(0,2,1), (0,1,1), (0,1,1.5), (0,1,0.5), (0, 1, 0.8), (0,1,2)]
     clear_positions = [(1,0,0), (0,1,0), (0,0,1)]
     manager.fill_voxels(positions)
 
     # test
     pose0 = [-0.6, 0.6, 1.0]
     orien0 = [0, 0, 0, 1]
-    move_test(robot, joint_indices, pose0, orien0, [0.4, 1.7, 1.0], [0, 0, 0, 1],
-              self_collision_links, manager.get_all_voxels())
+    move_test(robot, joint_indices, pose0, orien0, [0.8, 1.7, 1.0], [0, 0, 0, 1],
+              self_collision_links, manager.get_all_voxels(), debug=True)
 
     # pp.wait_for_user()
 
 
 def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
-              self_collision_links, obstacles):
+              self_collision_links, obstacles, debug=False):
     # first, move gripper to an initial position
-    Lab.move_gripper_to(robot, joint_indices, pose0, orien0, [], self_collision_links)
+    move.move_to(robot, joint_indices, pose0, orien0, [], self_collision_links)
     pp.wait_for_user()
 
     # move gripper to desired ending position
-    Lab.move_gripper_to(robot, joint_indices, pose1, orien1, obstacles, self_collision_links)
+    move.move_to(robot, joint_indices, pose1, orien1, obstacles, self_collision_links, debug=debug)
     pp.wait_for_user()
 
 

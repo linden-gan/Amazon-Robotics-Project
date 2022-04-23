@@ -44,9 +44,10 @@ def main():
     # test
     pose0 = [-0.6, 0.6, 1.0]
     orien0 = [0, 0, 0, 1]
-    # move_test(robot, joint_indices, pose0, orien0, [-0.4, 0.6, 1.0], [0, 0, 0, 1], self_collision_links)
+    move_test(robot, joint_indices, pose0, orien0, [0.4, 1.7, 1.0], [0, 0, 0, 1], self_collision_links)
     # move_test(robot, joint_indices, pose0, orien0, [-0.1, 0.9, 1.0], [0, 0, 0, 1], self_collision_links)
     # ill
+    # end config in collision! try a different IK solution
     move_test(robot, joint_indices, pose0, orien0, [0.4, 0.6, 1.0], [0, 0, 0, 1], self_collision_links)
     # move_test(robot, joint_indices, pose0, orien0, [-0.4, 0.6, 1.0], [0, 0, 0, 1], self_collision_links)
 
@@ -60,7 +61,7 @@ def main():
 
 
 def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
-              self_collision_links):
+              self_collision_links, debug=False):
     # first, move gripper to an initial position
     move_gripper_to(robot, joint_indices, pose0, orien0, [], self_collision_links)
 
@@ -68,11 +69,11 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
     # block1 = pp.create_box(0.059, 0.09, 0.089)
     block2 = pp.create_box(0.1, 0.1, 3)
     # pp.set_pose(block1, pp.Pose(pp.Point(x=-0.5, y=0.5, z=0.7)))
-    pp.set_pose(block2, pp.Pose(pp.Point(x=0.3, y=1.0, z=0.5)))
+    pp.set_pose(block2, pp.Pose(pp.Point(x=0.3, y=1.8, z=0.5)))
     pp.wait_for_user()
 
     # move gripper to desired ending position
-    move_gripper_to(robot, joint_indices, pose1, orien1, [block2], self_collision_links)
+    move_gripper_to(robot, joint_indices, pose1, orien1, [block2], self_collision_links, debug=debug)
     pp.wait_for_user()
 
     # clean obstacles for next time
@@ -80,7 +81,7 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
 
 
 def move_gripper_to(robot, joint_indices, pose: list, orien: list, blocks: list,
-                    self_collision_links):
+                    self_collision_links, debug=False):
     # compute joint destination according to end effector position
     des_config = p.calculateInverseKinematics(robot, joint_indices[-1],
                                               pose, orien)
@@ -89,9 +90,9 @@ def move_gripper_to(robot, joint_indices, pose: list, orien: list, blocks: list,
     path = pp.plan_joint_motion(robot, joint_indices, des_config,
                                 obstacles=blocks, self_collisions=True,
                                 disabled_collisions=self_collision_links,
-                                algorithm=None)
+                                algorithm='rrt')
 
-    # visualize end configuration path[-1]
+    # visualize end configuration
     # pp.set_joint_positions(robot, joint_indices, des_config)
     # pp.wait_for_user()
 
@@ -100,9 +101,12 @@ def move_gripper_to(robot, joint_indices, pose: list, orien: list, blocks: list,
         return
 
     # execute path
-    time_step = 0.03
+    time_step = 2.0 if debug else 0.03
+    cprint(f'path length is {len(path)}', 'cyan')
     for conf in path:
         pp.set_joint_positions(robot, joint_indices, conf)
+        if debug:
+            print(f'config is {conf}')
         pp.wait_for_duration(time_step)
 
 
