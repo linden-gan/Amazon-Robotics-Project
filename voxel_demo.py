@@ -44,7 +44,7 @@ def main():
     pose0 = [-0.6, 0.6, 1.0]
     orien0 = [0, 0, 0, 1]
     move_test(robot, joint_indices, pose0, orien0, [-0.8, 0.7, 1.0], [0, 0, 0, 1],
-              self_collision_links, manager.get_all_voxels(), debug=True)
+              self_collision_links, manager.get_all_voxels())
 
     # pp.wait_for_user()
 
@@ -62,7 +62,6 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
 
 class VoxelManager:
     def __init__(self):
-        self._id_counter = 0
         self._map: dict = {}
 
     def fill_voxel(self, x, y, z):
