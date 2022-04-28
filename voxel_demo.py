@@ -34,6 +34,7 @@ def main():
         ('wrist_2_link', 'wrist_3_link')]
     self_collision_links = pp.get_disabled_collisions(robot, robot_self_collision_disabled_link_names)
 
+    # fill voxels
     manager = VoxelManager()
     positions = [(0,2,1), (0,1,1), (0,1,1.5), (0,1,0.5), (0, 1, 0.8), (0,1,2)]
     clear_positions = [(1,0,0), (0,1,0), (0,0,1)]
@@ -42,7 +43,7 @@ def main():
     # test
     pose0 = [-0.6, 0.6, 1.0]
     orien0 = [0, 0, 0, 1]
-    move_test(robot, joint_indices, pose0, orien0, [0.8, 1.7, 1.0], [0, 0, 0, 1],
+    move_test(robot, joint_indices, pose0, orien0, [-0.8, 0.7, 1.0], [0, 0, 0, 1],
               self_collision_links, manager.get_all_voxels(), debug=True)
 
     # pp.wait_for_user()
@@ -78,7 +79,6 @@ class VoxelManager:
         block = pp.create_box(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE)
         pp.set_pose(block, pp.Pose(pp.Point(x=x, y=y, z=z)))
         self._map[(x, y, z)] = block
-        print(self._map)
         return True
 
     def fill_voxels(self, positions: list):
@@ -95,7 +95,6 @@ class VoxelManager:
 
         block = self._map.pop((x, y, z))
         pp.remove_body(block)
-        print(self._map)
         pp.wait_for_user()
         return True
 
