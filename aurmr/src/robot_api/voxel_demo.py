@@ -1,11 +1,16 @@
 import pybullet as p
 import pybullet_data
 import pybullet_utils.bullet_client as bc
-import os
-from termcolor import cprint
 import pybullet_planning as pp
+
 import numpy as np
 import copy
+import os
+from termcolor import cprint
+
+import rospy
+from sensor_msgs.msg import PointCloud2
+
 import move
 
 HERE = os.path.dirname(__file__)  # TODO
@@ -17,7 +22,7 @@ ROBOT_URDF = os.path.join(HERE, 'robot_info', 'robot_with_stand.urdf')
 
 def main():
     # initialize the env
-    pp.connect(use_gui=True, mp4='video.mp4')
+    pp.connect(use_gui=True)
     robot = pp.load_pybullet(ROBOT_URDF, fixed_base=True)
     # gravity
     p.setGravity(0, 0, -9.8)
@@ -63,6 +68,12 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
 class VoxelManager:
     def __init__(self):
         self._map: dict = {}
+        self._camera_sub = rospy.Subscriber('depth/points', PointCloud2, self.callback)
+        self._cloud: PointCloud2 = None
+
+    def callback(self, msg: PointCloud2):
+        # TODO: transform cloud to positions and call fill_voxel to fill them
+        self._cloud = msg
 
     def fill_voxel(self, x, y, z):
         """
@@ -89,6 +100,13 @@ class VoxelManager:
             self.fill_voxel(pose[0], pose[1], pose[2])
 
     def clear_voxel(self, x, y, z):
+        """
+        clear a single voxel at (x, y, z)
+        :param x: x coordinate of voxel
+        :param y: y coordinate of voxel
+        :param z: z coordinate of voxel
+        :return true is success, false if this voxel is already cleared
+        """
         if self._map[(x, y, z)] is None:
             return False
 
@@ -98,10 +116,17 @@ class VoxelManager:
         return True
 
     def clear_voxels(self, positions: list):
+        """
+        clear a list of voxels
+        :param positions: a list of (x, y, z)
+        """
         for pose in positions:
             self.clear_voxel(pose[0], pose[1], pose[2])
 
     def get_all_voxels(self):
+        """
+        return a deep copy all all blocks as voxels
+        """
         return copy.copy(list(self._map.values()))
 
 
