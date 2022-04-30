@@ -27,7 +27,7 @@ def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
                                               pose, orien)
 
     # plan motion
-    path = plan_motion2(robot, joint_indices, des_config,
+    path = plan_motion(robot, joint_indices, des_config,
                                 obstacles=obstacles, self_collisions=True,
                                 disabled_collisions=disabled_collision_links,
                                 algorithm='rrt')
@@ -52,7 +52,7 @@ def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
         pp.wait_for_duration(time_step)
 
 
-def plan_motion2(body, joints, end_conf, obstacles=[], attachments=[],
+def plan_motion(body, joints, end_conf, obstacles=[], attachments=[],
                       self_collisions=True, disabled_collisions=set(), extra_disabled_collisions=set(),
                       weights=None, resolutions=None, max_distance=MAX_DISTANCE, custom_limits={}, diagnosis=False, **kwargs):
     """call birrt to plan a joint trajectory from the robot's **current** conf to ``end_conf``.
@@ -69,10 +69,10 @@ def plan_motion2(body, joints, end_conf, obstacles=[], attachments=[],
 
     if not pp.check_initial_end(start_conf, end_conf, collision_fn, diagnosis=diagnosis):
         return None
-    return birrt2(start_conf, end_conf, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs)
+    return birrt(start_conf, end_conf, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs)
 
 
-def birrt2(start, goal, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs):
+def birrt(start, goal, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs):
     """
     :param start: Start configuration - conf
     :param goal: End configuration - conf
@@ -83,14 +83,14 @@ def birrt2(start, goal, distance_fn, sample_fn, extend_fn, collision_fn, **kwarg
     :param kwargs: Keyword arguments
     :return: Path [q', ..., q"] or None if unable to find a solution
     """
-    solutions = random_restarts2(pp.rrt_connect, start, goal, distance_fn, sample_fn, extend_fn, collision_fn,
+    solutions = random_restarts(pp.rrt_connect, start, goal, distance_fn, sample_fn, extend_fn, collision_fn,
                                 max_solutions=1, **kwargs)
     if not solutions:
         return None
     return solutions[0]
 
 
-def random_restarts2(solve_fn, start, goal, distance_fn, sample_fn, extend_fn, collision_fn,
+def random_restarts(solve_fn, start, goal, distance_fn, sample_fn, extend_fn, collision_fn,
                     restarts=pp.RRT_RESTARTS, smooth=pp.RRT_SMOOTHING,
                     success_cost=0., max_time=pp.INF, max_solutions=1, verbose=False, **kwargs):
     """Apply random restarts to a given planning algorithm to obtain multiple solutions.
