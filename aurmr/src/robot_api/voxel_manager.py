@@ -74,6 +74,7 @@ class VoxelManager:
     def callback(self, msg: PointCloud2):
         # TODO: transform cloud to positions and call fill_voxel to fill them
         self._cloud = msg
+        print(msg.data)
 
     def fill_voxel(self, x, y, z):
         """
@@ -131,4 +132,11 @@ class VoxelManager:
 
 
 if __name__ == "__main__":
-    main()
+    # initialize the env
+    pp.connect(use_gui=True)
+    # gravity
+    p.setGravity(0, 0, -9.8)
+
+    rospy.init_node('voxel_manager')
+    VoxelManager()
+    rospy.spin()

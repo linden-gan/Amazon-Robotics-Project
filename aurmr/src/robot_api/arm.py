@@ -15,7 +15,7 @@ import os
 
 import aurmr.msg
 from move import move_to, plan_motion
-from voxel_demo import VoxelManager
+from aurmr.src.robot_api.voxel_manager import VoxelManager
 
 HERE = os.path.dirname(__file__)
 
