@@ -72,6 +72,25 @@ def plan_motion(body, joints, end_conf, obstacles=[], attachments=[],
     return birrt(start_conf, end_conf, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs)
 
 
+def plan_motion_from_to(body, joints, start_conf, end_conf, obstacles=[], attachments=[],
+                      self_collisions=True, disabled_collisions=set(), extra_disabled_collisions=set(),
+                      weights=None, resolutions=None, max_distance=MAX_DISTANCE, custom_limits={}, diagnosis=False, **kwargs):
+    """
+    call birrt to plan a joint trajectory from the robot's start_conf conf to end_conf
+    """
+    assert len(joints) == len(end_conf)
+    sample_fn = pp.get_sample_fn(body, joints, custom_limits=custom_limits)
+    distance_fn = pp.get_distance_fn(body, joints, weights=weights)
+    extend_fn = pp.get_extend_fn(body, joints, resolutions=resolutions)
+    collision_fn = pp.get_collision_fn(body, joints, obstacles=obstacles, attachments=attachments, self_collisions=self_collisions,
+                                    disabled_collisions=disabled_collisions, extra_disabled_collisions=extra_disabled_collisions,
+                                    custom_limits=custom_limits, max_distance=max_distance)
+
+    if not pp.check_initial_end(start_conf, end_conf, collision_fn, diagnosis=diagnosis):
+        return None
+    return birrt(start_conf, end_conf, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs)
+
+
 def birrt(start, goal, distance_fn, sample_fn, extend_fn, collision_fn, **kwargs):
     """
     :param start: Start configuration - conf

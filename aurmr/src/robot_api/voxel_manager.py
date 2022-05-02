@@ -17,7 +17,7 @@ HERE = os.path.dirname(__file__)  # TODO
 
 VOXEL_SIZE = 0.1
 
-ROBOT_URDF = os.path.join(HERE, 'robot_info', 'robot_with_stand.urdf')
+ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
 
 
 def main():
@@ -42,7 +42,6 @@ def main():
     # fill voxels
     manager = VoxelManager()
     positions = [(0,2,1), (0,1,1), (0,1,1.5), (0,1,0.5), (0, 1, 0.8), (0,1,2)]
-    clear_positions = [(1,0,0), (0,1,0), (0,0,1)]
     manager.fill_voxels(positions)
 
     # test
@@ -140,3 +139,6 @@ if __name__ == "__main__":
     rospy.init_node('voxel_manager')
     VoxelManager()
     rospy.spin()
+
+    # for testing purpose
+    # main()

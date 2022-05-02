@@ -2,9 +2,7 @@
 
 import rospy
 import actionlib
-# from aurmr.srv import add
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryActionGoal
-from trajectory_msgs.msg import JointTrajectoryPoint
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 
 import pybullet as p
 import pybullet_data
@@ -13,9 +11,8 @@ import pybullet_planning as pp
 
 import os
 
-import aurmr.msg
-from move import move_to, plan_motion
-from aurmr.src.robot_api.voxel_manager import VoxelManager
+from move import plan_motion_from_to
+# from aurmr.src.robot_api.voxel_manager import VoxelManager
 
 HERE = os.path.dirname(__file__)
 
@@ -43,28 +40,31 @@ class Arm:
         # initialize action server
         self._action_name = name
         self._server = actionlib.SimpleActionServer(self._action_name, FollowJointTrajectoryAction,
-                       execute_cb=self.call_back, auto_start=False)
+                       execute_cb=self.move_to_goal, auto_start=False)
         self._server.start()
         
-    def move_to_goal(self, goal):
+    def move_to_goal(self, goal: FollowJointTrajectoryGoal):
         # compute joint destination according to end effector position
-        des_config = p.calculateInverseKinematics(self._robot, self._joints[-1], goal.pose, goal.orien)
+        waypoints = list(goal.trajectory.points)
+        print("1111111111111111")
+        print(f'waypoints are {waypoints}')
 
         # plan motion
-        path = plan_motion(self._robot, self._joints, des_config,
-                                obstacles=[], self_collisions=True,
-                                disabled_collisions=self._disabled_links,
-                                algorithm='rrt')
+        detail_path = [waypoints[0]]
+        for i in range(len(waypoints) - 1):
+            detail_path.extend(plan_motion_from_to(self._robot, self._joints, waypoints[i], waypoints[i + 1],
+                                       obstacles=[], self_collisions=True, disabled_collisions=self._disabled_links))
 
-        if path is None:
+        if detail_path is None:
             return
 
         # execute path
         time_step = 0.03
-        for conf in path:
+        for conf in detail_path:
             pp.set_joint_positions(self._robot, self._joints, conf)
-
             pp.wait_for_duration(time_step)
+
+        # action result
 
 
     # def move_server():
@@ -98,10 +98,10 @@ if __name__ == "__main__":
 
     # add obstacles
     # TODO: change this for better modularity
-    # fill voxels
-    manager = VoxelManager()
-    positions = [(0,2,1), (0,1,1), (0,1,1.5), (0,1,0.5), (0, 1, 0.8), (0,1,2)]
-    manager.fill_voxels(positions)
+    # # fill voxels
+    # manager = VoxelManager()
+    # positions = [(0,2,1), (0,1,1), (0,1,1.5), (0,1,0.5), (0, 1, 0.8), (0,1,2)]
+    # manager.fill_voxels(positions)
 
     # initialize node
     rospy.init_node('move')
