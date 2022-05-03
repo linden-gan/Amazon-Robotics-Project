@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pybullet as p
 import pybullet_data
 import pybullet_utils.bullet_client as bc
@@ -67,13 +69,14 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
 class VoxelManager:
     def __init__(self):
         self._map: dict = {}
-        self._camera_sub = rospy.Subscriber('depth/points', PointCloud2, self.callback)
+        self._camera_sub = rospy.Subscriber('/camera/depth/image_rect_raw', PointCloud2, self.callback, queue_size=10)
+        print("111111111111")
         self._cloud: PointCloud2 = None
 
-    def callback(self, msg: PointCloud2):
+    def callback(self, msg):
         # TODO: transform cloud to positions and call fill_voxel to fill them
+        print("33333333")
         self._cloud = msg
-        print(msg.data)
 
     def fill_voxel(self, x, y, z):
         """
@@ -137,7 +140,8 @@ if __name__ == "__main__":
     p.setGravity(0, 0, -9.8)
 
     rospy.init_node('voxel_manager')
-    VoxelManager()
+    vm = VoxelManager()
+
     rospy.spin()
 
     # for testing purpose
