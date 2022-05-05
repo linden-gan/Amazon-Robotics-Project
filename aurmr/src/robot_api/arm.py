@@ -2,7 +2,7 @@
 
 import rospy
 import actionlib
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectoryResult, FollowJointTrajectoryFeedback
 
 import pybullet as p
 import pybullet_data
@@ -29,8 +29,6 @@ SELF_COLLISION_DISABLED_LINKS = [
 
 
 class Arm:
-    # _feedback
-
     def __init__(self, name, robot) -> None:
         # initialize arm info
         self._robot = robot
@@ -44,10 +42,17 @@ class Arm:
         self._server.start()
         
     def move_to_goal(self, goal: FollowJointTrajectoryGoal):
-        # compute joint destination according to end effector position
-        waypoints = list(goal.trajectory.points)
-        print("1111111111111111")
-        print(f'waypoints are {waypoints}')
+        """
+        receive a FollowJointTrajectoryGoal messeage (it contains a list of waypoints),
+        move the robot's arm in pybullet simulator, and then return a detailed path
+        """
+        feedback = FollowJointTrajectoryFeedback()
+        result = FollowJointTrajectoryResult()
+
+        waypoints = []
+        # traverse through all poses of waypoints
+        for point in goal.trajectory.points:
+            waypoints.append(point.positions)
 
         # plan motion
         detail_path = [waypoints[0]]
@@ -64,7 +69,13 @@ class Arm:
             pp.set_joint_positions(self._robot, self._joints, conf)
             pp.wait_for_duration(time_step)
 
-        # action result
+            # publish feedback
+            feedback.actual.positions = conf
+            self._server.publish_feedback(feedback=feedback)
+
+        # return action result if success
+        result.SUCCESSFUL = 1
+        self._server.set_succeeded(result)
 
 
     # def move_server():
@@ -72,21 +83,6 @@ class Arm:
     #     s = rospy.Service('add_move', add, handle_move)
     #     print("Ready to add two ints.")
     #     rospy.spin()
-
-
-# class Arm:
-#     def __init__(self, name, robot) -> None:
-#         # initialize arm info
-#         self._joints = pp.joints_from_names(robot, JOINT_NAMES)
-#         self._disabled_links = pp.get_disabled_collisions(robot, SELF_COLLISION_DISABLED_LINKS)
-
-#         # initialize action server
-#         self._client = actionlib.SimpleActionClient("/arm_contorller/follow_joint_trajectory", FollowJointTrajectoryAction)
-#         self._client.wait_for_server()
-        
-#     def move(self, pose, orien):
-#         goal = FollowJointTrajectoryActionGoal()
-#         move_to(robot, self._joints, pose, orien, [], self._disabled_links)
 
 
 if __name__ == "__main__":

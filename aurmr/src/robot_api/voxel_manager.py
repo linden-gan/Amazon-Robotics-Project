@@ -17,7 +17,7 @@ import move
 
 HERE = os.path.dirname(__file__)  # TODO
 
-VOXEL_SIZE = 0.1
+VOXEL_SIZE = 0.01
 
 ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
 
@@ -69,14 +69,22 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
 class VoxelManager:
     def __init__(self):
         self._map: dict = {}
-        self._camera_sub = rospy.Subscriber('/camera/depth/image_rect_raw', PointCloud2, self.callback, queue_size=10)
+        self._camera_sub = rospy.Subscriber('/camera/depth/color/points', PointCloud2, self.callback, queue_size=10)
         print("111111111111")
-        self._cloud: PointCloud2 = None
+        self.flag = True
 
-    def callback(self, msg):
+    def callback(self, msg: PointCloud2):
         # TODO: transform cloud to positions and call fill_voxel to fill them
-        print("33333333")
-        self._cloud = msg
+        # if self.flag:
+        #     self.flag = False
+        #     print(msg)
+
+        positions = []
+        data = msg.data
+        for i in range(0, len(data), 20):
+            positions.append((data[i], data[i + 1], data[i + 2]))
+
+        self.fill_voxels(positions)
 
     def fill_voxel(self, x, y, z):
         """
@@ -99,6 +107,7 @@ class VoxelManager:
         fill a list of voxels
         :param positions: a list of (x, y, z)
         """
+        print(f'the length of positions is {len(positions)}')
         for pose in positions:
             self.fill_voxel(pose[0], pose[1], pose[2])
 
