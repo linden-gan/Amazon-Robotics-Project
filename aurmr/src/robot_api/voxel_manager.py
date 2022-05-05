@@ -12,6 +12,7 @@ from termcolor import cprint
 
 import rospy
 from sensor_msgs.msg import PointCloud2
+import sensor_msgs.point_cloud2
 
 import move
 
@@ -80,11 +81,16 @@ class VoxelManager:
         #     print(msg)
 
         positions = []
-        data = msg.data
-        for i in range(0, len(data), 20):
-            positions.append((data[i], data[i + 1], data[i + 2]))
+        print('call back once')
+        # data = msg.data
+        # for i in range(0, len(data), 20):
+        #     positions.append((data[i], data[i + 1], data[i + 2]))
+
+        for point in sensor_msgs.point_cloud2.read_points(msg, skip_nans=True):
+            positions.append((point[0], point[1], point[2]))
 
         self.fill_voxels(positions)
+        self.clear_voxels(positions)
 
     def fill_voxel(self, x, y, z):
         """
