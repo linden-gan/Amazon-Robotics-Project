@@ -18,7 +18,7 @@ import move
 
 HERE = os.path.dirname(__file__)  # TODO
 
-VOXEL_SIZE = 0.01
+VOXEL_SIZE = 0.1
 
 ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
 
@@ -79,15 +79,20 @@ class VoxelManager:
         # if self.flag:
         #     self.flag = False
         #     print(msg)
+        
 
         positions = []
         print('call back once')
         # data = msg.data
         # for i in range(0, len(data), 20):
         #     positions.append((data[i], data[i + 1], data[i + 2]))
-
+        
+        ds_rate = 156
+        count = 0
         for point in sensor_msgs.point_cloud2.read_points(msg, skip_nans=True):
-            positions.append((point[0], point[1], point[2]))
+            if count % ds_rate == 0:
+                positions.append((point[0], point[1], point[2]))
+            count += 1
 
         self.fill_voxels(positions)
         self.clear_voxels(positions)
@@ -130,7 +135,6 @@ class VoxelManager:
 
         block = self._map.pop((x, y, z))
         pp.remove_body(block)
-        pp.wait_for_user()
         return True
 
     def clear_voxels(self, positions: list):
