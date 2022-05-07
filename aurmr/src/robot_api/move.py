@@ -12,7 +12,7 @@ MAX_DISTANCE = 0.
 def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
             disabled_collision_links, debug=False):
     """
-    move the gripper to destination pose and orien
+    FOR DATA COLLECTION AND DEBUG ONLY. move the gripper to destination pose and orien
     :param robot: robot descriptor
     :param joint_indices: a list of joint descriptors
     :param pose: destination position
@@ -44,6 +44,8 @@ def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
     # execute path
     time_step = 2.0 if debug else 0.03
     cprint(f'path length is {len(path)}', 'cyan')
+    cprint(f'starting conf is {path[0]}', 'green')
+    cprint(f'ending conf is {path[-1]}', 'blue')
     for conf in path:
         pp.set_joint_positions(robot, joint_indices, conf)
 

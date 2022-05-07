@@ -10,7 +10,7 @@ import numpy as np
 
 HERE = os.path.dirname(__file__)
 # ROBOT_URDF = os.path.join(HERE, 'robot_info', 'robot.urdf')
-ROBOT_URDF = os.path.join(HERE, 'robot_info', 'robot_with_stand.urdf')
+ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
 
 X = 0.5
 Y = 1.0
@@ -19,7 +19,7 @@ Z = 0.0
 
 def main():
     # p.getCameraImage()
-    pp.connect(use_gui=True, mp4='video.mp4')
+    pp.connect(use_gui=True)
     robot = pp.load_pybullet(ROBOT_URDF, fixed_base=True)
 
     # gravity
@@ -44,7 +44,7 @@ def main():
     # test
     pose0 = [-0.6, 0.6, 1.0]
     orien0 = [0, 0, 0, 1]
-    move_test(robot, joint_indices, pose0, orien0, [0.4, 1.7, 1.0], [0, 0, 0, 1], self_collision_links)
+    # move_test(robot, joint_indices, pose0, orien0, [0.4, 1.7, 1.0], [0, 0, 0, 1], self_collision_links)
     # move_test(robot, joint_indices, pose0, orien0, [-0.1, 0.9, 1.0], [0, 0, 0, 1], self_collision_links)
     # ill
     # end config in collision! try a different IK solution
@@ -95,7 +95,10 @@ def move_gripper_to(robot, joint_indices, pose: list, orien: list, blocks: list,
     # execute path
     time_step = 2.0 if debug else 0.03
     cprint(f'path length is {len(path)}', 'cyan')
-    for conf in path:
+    cprint(path)
+    for conf in path[:len(path) - 4]:
+        print(len(joint_indices))
+        print(len(conf))
         pp.set_joint_positions(robot, joint_indices, conf)
         if debug:
             print(f'config is {conf}')

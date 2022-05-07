@@ -30,6 +30,9 @@ def main():
     # gravity
     p.setGravity(0, 0, -9.8)
 
+    # block = pp.create_collision_shape()
+    # createCollisionShape(shapeType=p.GEOM_BOX, radius=1, )
+
     # get joint indices
     joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint',
                    'wrist_2_joint', 'wrist_3_joint']
@@ -53,7 +56,7 @@ def main():
     move_test(robot, joint_indices, pose0, orien0, [-0.8, 0.7, 1.0], [0, 0, 0, 1],
               self_collision_links, manager.get_all_voxels())
 
-    # pp.wait_for_user()
+    pp.wait_for_user()
 
 
 def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
@@ -87,7 +90,7 @@ class VoxelManager:
         # for i in range(0, len(data), 20):
         #     positions.append((data[i], data[i + 1], data[i + 2]))
         
-        ds_rate = 156
+        ds_rate = 150
         count = 0
         for point in sensor_msgs.point_cloud2.read_points(msg, skip_nans=True):
             if count % ds_rate == 0:
@@ -110,6 +113,7 @@ class VoxelManager:
 
         block = pp.create_box(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE)
         pp.set_pose(block, pp.Pose(pp.Point(x=x, y=y, z=z)))
+        # block = p.createCollisionShape(shapeType=p.GEOM_BOX)
         self._map[(x, y, z)] = block
         return True
 
@@ -153,15 +157,15 @@ class VoxelManager:
 
 
 if __name__ == "__main__":
-    # initialize the env
-    pp.connect(use_gui=True)
-    # gravity
-    p.setGravity(0, 0, -9.8)
-
-    rospy.init_node('voxel_manager')
-    vm = VoxelManager()
-
-    rospy.spin()
+    # # initialize the env
+    # pp.connect(use_gui=True)
+    # # gravity
+    # p.setGravity(0, 0, -9.8)
+    #
+    # rospy.init_node('voxel_manager')
+    # vm = VoxelManager()
+    #
+    # rospy.spin()
 
     # for testing purpose
-    # main()
+    main()
