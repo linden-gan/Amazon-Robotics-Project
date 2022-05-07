@@ -12,13 +12,15 @@ import pybullet_utils.bullet_client as bc
 import pybullet_planning as pp
 
 import os
+from termcolor import cprint
 
-from move import plan_motion_from_to, plan_motion
-# from aurmr.src.robot_api.voxel_manager import VoxelManager
+from move import plan_motion_from_to, sim_execute_motion
 
 HERE = os.path.dirname(__file__)
 
 ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
+
+PYBULLET_JOINT_INITIAL = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint',
                'wrist_2_joint', 'wrist_3_joint']
@@ -29,90 +31,85 @@ SELF_COLLISION_DISABLED_LINKS = [
         ('upper_arm_link', 'forearm_link'), ('forearm_link', 'wrist_1_link'), ('wrist_1_link', 'wrist_2_link'),
         ('wrist_2_link', 'wrist_3_link')]
 
+JOINT_ACTION_SERVER = '/pos_joint_traj_controller/follow_joint_trajectory'
+
+TOPIC = "test_arm"
+
 
 class Arm:
-    def __init__(self, name, robot) -> None:
+    def __init__(self, pb_robot, initial_joint_state=PYBULLET_JOINT_INITIAL) -> None:
         # initialize arm info
-        self._robot = robot
-        self._joints = pp.joints_from_names(robot, JOINT_NAMES)
-        self._joint_state = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self._pb_robot = pb_robot
+        self._joint_indices = pp.joints_from_names(robot, JOINT_NAMES)
         self._disabled_links = pp.get_disabled_collisions(robot, SELF_COLLISION_DISABLED_LINKS)
 
-        # initialize action client
-        self._trajectory_client = actionlib.SimpleActionClient('robot', FollowJointTrajectoryAction)
-        
-    def move_to_goal(self, goal: FollowJointTrajectoryGoal):
-        """
-        DEPRECATED
-        """
-        # feedback = FollowJointTrajectoryFeedback()
-        # result = FollowJointTrajectoryResult()
-        #
-        # waypoints = []
-        # # traverse through all poses of waypoints
-        # for point in goal.trajectory.points:
-        #     waypoints.append(point.positions)
-        #
-        # # plan motion
-        # detail_path = [waypoints[0]]
-        # for i in range(len(waypoints) - 1):
-        #     detail_path.extend(plan_motion_from_to(self._robot, self._joints, waypoints[i], waypoints[i + 1],
-        #                                            obstacles=[], self_collisions=True, disabled_collisions=self._disabled_links))
-        #
-        # if detail_path is None:
-        #     return
-        #
-        # # execute path
-        # time_step = 0.03
-        # print(f'the length of detail path is {len(detail_path)}')
-        # for conf in detail_path:
-        #     pp.set_joint_positions(self._robot, self._joints, conf)
-        #     pp.wait_for_duration(time_step)
-        #
-        # # make goal
-        # goal = FollowJointTrajectoryGoal()
-        # goal.trajectory.joint_names = JOINT_NAMES
-        # goal.trajectory.points = []
+        # synchronize pybullet simulator's initial pose to actual robot if actual state is not
+        # equal to simulator's state
+        if initial_joint_state != PYBULLET_JOINT_INITIAL:
+            path = plan_motion_from_to(robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
+                                       obstacles=[], self_collisions=True,
+                                       disabled_collisions=self._disabled_links,
+                                       algorithm='rrt')
+            if path is None:
+                cprint('Bad initial joint state', 'red')
+                return
+            sim_execute_motion(self._pb_robot, self._joint_indices, path)
+        # update initialized joint state
+        self._joint_state = initial_joint_state
 
-    def move_to_pose(self, end_pose: PoseStamped):
+        # initialize action client
+        self._trajectory_client = actionlib.SimpleActionClient(JOINT_ACTION_SERVER, FollowJointTrajectoryAction)
+        # initialize end pose subscriber
+        self._pose_sub = rospy.Subscriber(TOPIC, PoseStamped, callback=self.callback)
+
+    def callback(self, goal: PoseStamped):
+        self.move_to_pose(goal)
+
+    def move_to_pose(self,
+                     end_pose: PoseStamped,
+                     max_plan_time=10.0,
+                     execution_timeout=15,
+                     tolerance=0.01,
+                     orientation_constraint=None):
+        # use IK to compute end joint state according to end effector position
+        position = [end_pose.pose.position.x, end_pose.pose.position.y, end_pose.pose.position.z]
+        orien = [end_pose.pose.orientation.x, end_pose.pose.orientation.y,
+                 end_pose.pose.orientation.z, end_pose.pose.orientation.w]
+        end_joint_state = p.calculateInverseKinematics(self._pb_robot, self._joint_indices[-1],
+                                                       position, orien)
+
         # plan motion
-        path = self.compute_path_to(end_pose.pose.position, end_pose.pose.orientation)
+        print(f'start conf is {self._joint_state}')
+        print(f'end conf is {end_joint_state}')
+        path = plan_motion_from_to(robot, self._joint_indices, self._joint_state, end_joint_state,
+                                   obstacles=[], self_collisions=True,
+                                   disabled_collisions=self._disabled_links,
+                                   algorithm='rrt')
 
         if path is None:
+            cprint('No path found', 'red')
             return
 
-        # execute path
-        time_step = 0.03
-        print(f'the length of detail path is {len(path)}')
-        for conf in path:
-            pp.set_joint_positions(self._robot, self._joints, conf)
-            pp.wait_for_duration(time_step)
+        # execute path in pybullet
+        sim_execute_motion(self._pb_robot, self._joint_indices, path)
 
         # make goal
         goal = FollowJointTrajectoryGoal()
         goal.trajectory.joint_names = JOINT_NAMES
-        goal.trajectory.points = toJointTrajectoryPoint(path)
+        goal.trajectory.points = to_joint_trajectory_point(path)
         # send goal
         self._trajectory_client.send_goal(goal)
-        self._trajectory_client.wait_for_result()
+        self._trajectory_client.wait_for_result(rospy.Duration(execution_timeout))
         # return result
-        return self._trajectory_client.get_result()
+        result = self._trajectory_client.get_result()
 
-    def compute_path_to(self, end_position, end_orien):
-        # compute joint destination according to end effector position
-        end_joint_state = p.calculateInverseKinematics(self._robot, self._joints[-1],
-                                              end_position, end_orien)
-        # plan motion
-        path = plan_motion(robot, self._joints, end_joint_state,
-                           obstacles=[], self_collisions=True,
-                           disabled_collisions=self._disabled_links,
-                           algorithm='rrt')
-        return path
+        # update current joint state
+        self._joint_state = end_joint_state
 
 
-def toJointTrajectoryPoint(waypoints):
+def to_joint_trajectory_point(waypoints):
     """
-    transform a list of waypoints to a list of JointTrajectoryPoint
+    transform a list of waypoints of joint states to a list of JointTrajectoryPoint
     """
     res = []
     for point in waypoints:
@@ -122,12 +119,15 @@ def toJointTrajectoryPoint(waypoints):
 
 
 if __name__ == "__main__":
+    rospy.init_node('arm')
+
     # initialize the env
     pp.connect(use_gui=True)
     robot = pp.load_pybullet(ROBOT_URDF, fixed_base=True)
     # gravity
     p.setGravity(0, 0, -9.8)
 
-    # initialize node
-    arm = Arm()
-    arm.move_to_pose()
+    # initialize arm robot
+    arm = Arm(robot)
+
+    rospy.spin()

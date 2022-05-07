@@ -12,7 +12,7 @@ MAX_DISTANCE = 0.
 def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
             disabled_collision_links, debug=False):
     """
-    FOR DATA COLLECTION AND DEBUG ONLY. move the gripper to destination pose and orien
+    DEPRECATED: FOR DATA COLLECTION AND DEBUG ONLY. move the gripper to destination pose and orien
     :param robot: robot descriptor
     :param joint_indices: a list of joint descriptors
     :param pose: destination position
@@ -38,7 +38,7 @@ def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
         pp.wait_for_user()
 
     if path is None:
-        cprint('No path found', 'red')
+        cprint('No path found shit', 'red')
         return
 
     # execute path
@@ -51,6 +51,16 @@ def move_to(robot, joint_indices, pose: list, orien: list, obstacles: list,
 
         if debug:
             print(f'config is {conf}')
+        pp.wait_for_duration(time_step)
+
+
+def sim_execute_motion(robot, joint_indices, path):
+    """
+    execute path in pybullet
+    """
+    time_step = 0.03
+    for conf in path:
+        pp.set_joint_positions(robot, joint_indices, conf)
         pp.wait_for_duration(time_step)
 
 
