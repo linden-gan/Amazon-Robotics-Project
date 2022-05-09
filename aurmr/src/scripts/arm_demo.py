@@ -14,9 +14,13 @@ if __name__ == '__main__':
         pub = rospy.Publisher("test_arm", PoseStamped, queue_size=10)
         rospy.init_node('arm_demo')
         ps = PoseStamped()
-        ps.pose.position.x = -0.4
+        ps.pose.position.x = 0.4
         ps.pose.position.y = 1.1
         ps.pose.position.z = 0.6
+        ps.pose.orientation.x = 0
+        ps.pose.orientation.x = 0
+        ps.pose.orientation.x = 0
+        ps.pose.orientation.x = 1
         pub.publish(ps)
     except rospy.ROSInterruptException:
         print("program is interrupted.")

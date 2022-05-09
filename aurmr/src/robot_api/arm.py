@@ -31,8 +31,10 @@ SELF_COLLISION_DISABLED_LINKS = [
         ('upper_arm_link', 'forearm_link'), ('forearm_link', 'wrist_1_link'), ('wrist_1_link', 'wrist_2_link'),
         ('wrist_2_link', 'wrist_3_link')]
 
+# joint server on actual robot
 JOINT_ACTION_SERVER = '/pos_joint_traj_controller/follow_joint_trajectory'
 
+# topic about pose to move to
 TOPIC = "test_arm"
 
 
@@ -102,9 +104,15 @@ class Arm:
         self._trajectory_client.wait_for_result(rospy.Duration(execution_timeout))
         # return result
         result = self._trajectory_client.get_result()
+        print(result)
+        if result is not None:
+            cprint(f'error code is {result.error_code}', 'cyan')
+            if result.error_code == 0:
+                # update current joint state
+                self._joint_state = end_joint_state
+                return
 
-        # update current joint state
-        self._joint_state = end_joint_state
+        cprint('Failed to move actual robot', 'red')
 
 
 def to_joint_trajectory_point(waypoints):
@@ -122,12 +130,13 @@ if __name__ == "__main__":
     rospy.init_node('arm')
 
     # initialize the env
-    pp.connect(use_gui=True)
-    robot = pp.load_pybullet(ROBOT_URDF, fixed_base=True)
-    # gravity
+    p.connect(p.GUI)
     p.setGravity(0, 0, -9.8)
+    robot = p.loadURDF(ROBOT_URDF)
 
     # initialize arm robot
-    arm = Arm(robot)
+    arm = Arm(robot, [-0.8574946697157134, 0.3600245844803187, -1.3603905625549857, -0.5915446627350632, 1.5741277934974172, 0.856103511284937])
+
+    # (-0.8574946697157134, 0.3600245844803187, -1.3603905625549857, -0.5915446627350632, 1.5741277934974172, 0.856103511284937)
 
     rospy.spin()
