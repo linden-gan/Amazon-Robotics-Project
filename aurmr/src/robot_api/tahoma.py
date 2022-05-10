@@ -5,6 +5,7 @@ import actionlib
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectoryResult, FollowJointTrajectoryFeedback
 from geometry_msgs.msg import PoseStamped
 from trajectory_msgs.msg import JointTrajectoryPoint
+from sensor_msgs.msg import JointState
 
 import pybullet as p
 import pybullet_data
@@ -25,7 +26,7 @@ PYBULLET_JOINT_INITIAL = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint',
                'wrist_2_joint', 'wrist_3_joint']
 
-SELF_COLLISION_DISABLED_LINKS = [
+SELF_COLLISION_DISABLED_LINKS = [  # change /////////////////////////////////////////////////////////////////////
         ('stand', 'base_link_inertia'), ('stand', 'shoulder_link'), ('stand', 'upper_arm_link'),
         ('base_link_inertia', 'shoulder_link'), ('shoulder_link', 'upper_arm_link'),
         ('upper_arm_link', 'forearm_link'), ('forearm_link', 'wrist_1_link'), ('wrist_1_link', 'wrist_2_link'),
@@ -35,7 +36,7 @@ SELF_COLLISION_DISABLED_LINKS = [
 JOINT_ACTION_SERVER = '/pos_joint_traj_controller/follow_joint_trajectory'
 
 # topic about pose to move to
-TOPIC = "test_arm"
+TOPIC = "sensor_msgs/JointState"
 
 
 class Tahoma:
@@ -47,7 +48,7 @@ class Tahoma:
 
         # synchronize pybullet simulator's initial pose to actual robot if actual state is not
         # equal to simulator's state
-        if initial_joint_state != PYBULLET_JOINT_INITIAL:
+        if initial_joint_state != PYBULLET_JOINT_INITIAL:  # Threshold!
             path = plan_motion_from_to(pb_robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
                                        obstacles=[], self_collisions=True,
                                        disabled_collisions=self._disabled_links,
@@ -59,8 +60,27 @@ class Tahoma:
         # update initialized joint state
         self._joint_state = initial_joint_state
 
-        # initialize action client
+        # # listen to robot's joint state
+        # self._robot_state_sub = rospy.Subscriber(TOPIC, JointState, callback=self.synchronize)
+
+        # initialize action client to move robot's arm
         self._trajectory_client = actionlib.SimpleActionClient(JOINT_ACTION_SERVER, FollowJointTrajectoryAction)
+
+
+    # def synchronize(self):
+    #     # synchronize pybullet simulator's initial pose to actual robot if actual state is not
+    #     # equal to simulator's state
+    #     if initial_joint_state != PYBULLET_JOINT_INITIAL:
+    #         path = plan_motion_from_to(robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
+    #                                    obstacles=[], self_collisions=True,
+    #                                    disabled_collisions=self._disabled_links,
+    #                                    algorithm='rrt')
+    #         if path is None:
+    #             cprint('Bad initial joint state', 'red')
+    #             return
+    #         sim_execute_motion(self._pb_robot, self._joint_indices, path)
+    #     # update initialized joint state
+    #     self._joint_state = initial_joint_state
 
     def move_to_pose_goal(self,
                           end_pose: PoseStamped,
@@ -105,9 +125,10 @@ class Tahoma:
             if result.error_code == 0:
                 # update current joint state
                 self._joint_state = end_joint_state
-                return
+                return True
 
         cprint('Failed to move actual robot', 'red')
+        return False
 
 
 def to_joint_trajectory_point(waypoints):
