@@ -35,8 +35,10 @@ SELF_COLLISION_DISABLED_LINKS = [  # change ////////////////////////////////////
 # joint server on actual robot
 JOINT_ACTION_SERVER = '/pos_joint_traj_controller/follow_joint_trajectory'
 
-# topic about pose to move to
+# topic about robot's current actual state
 TOPIC = "sensor_msgs/JointState"
+
+THRESHOLD = 0.01
 
 
 class Tahoma:
@@ -66,11 +68,17 @@ class Tahoma:
         # initialize action client to move robot's arm
         self._trajectory_client = actionlib.SimpleActionClient(JOINT_ACTION_SERVER, FollowJointTrajectoryAction)
 
-
-    # def synchronize(self):
+    # def synchronize(self, msg: JointState):
     #     # synchronize pybullet simulator's initial pose to actual robot if actual state is not
     #     # equal to simulator's state
-    #     if initial_joint_state != PYBULLET_JOINT_INITIAL:
+    #     real_state = JointState.position
+    #     accurate = True
+    #     for i in range(len(real_state)):
+    #         if abs(real_state[i] - self._joint_state[i]) > THRESHOLD:
+    #             accurate = False
+    #             break
+    #
+    #     if not accurate:
     #         path = plan_motion_from_to(robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
     #                                    obstacles=[], self_collisions=True,
     #                                    disabled_collisions=self._disabled_links,
