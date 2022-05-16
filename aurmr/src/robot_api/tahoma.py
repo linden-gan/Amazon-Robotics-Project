@@ -20,7 +20,8 @@ from move import plan_motion_from_to, sim_execute_motion
 
 HERE = os.path.dirname(__file__)
 
-ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
+ROBOT = os.path.join(HERE, '..', 'robot_info', 'tahoma', 'tahoma.urdf')
+POD = os.path.join(HERE, '..', 'robot_info', 'tahoma', 'pod1.urdf')
 
 PYBULLET_JOINT_INITIAL = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
@@ -46,12 +47,12 @@ class Tahoma:
     def __init__(self) -> None:
         # initialize robot in pybullet
         p.connect(p.GUI)
-        p.setGravity(0, 0, -9.8)
-        self._pb_robot = p.loadURDF(ROBOT_URDF)
+        self._pod = p.loadURDF(POD)
+        self._pb_robot = p.loadURDF(ROBOT, basePosition=[0,-1,0])
 
         # initialize arm meta info
-        self._joint_indices = pp.joints_from_names(pb_robot, JOINT_NAMES)
-        self._disabled_links = pp.get_disabled_collisions(pb_robot, SELF_COLLISION_DISABLED_LINKS)
+        self._joint_indices = pp.joints_from_names(self._pb_robot, JOINT_NAMES)
+        self._disabled_links = pp.get_disabled_collisions(self._pb_robot, SELF_COLLISION_DISABLED_LINKS)
 
         # initialize joint state in simulator
         self.sim_joint_state = initial_joint_state
@@ -69,7 +70,7 @@ class Tahoma:
         # synchronize pybullet simulator's initial pose to actual robot if actual state is not
         # equal to simulator's state
         if initial_joint_state != PYBULLET_JOINT_INITIAL:  # Threshold!
-            path = plan_motion_from_to(pb_robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
+            path = plan_motion_from_to(self._pb_robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
                                        obstacles=[], self_collisions=True,
                                        disabled_collisions=self._disabled_links,
                                        algorithm='rrt')
@@ -87,7 +88,7 @@ class Tahoma:
         accurate = state_all_close(self.actual_joint_state.copy(), self.sim_joint_state.copy())
 
         if not accurate:
-            path = plan_motion_from_to(robot, self._joint_indices, self.sim_joint_state, self.actual_joint_state,
+            path = plan_motion_from_to(self._pb_robot, self._joint_indices, self.sim_joint_state, self.actual_joint_state,
                                        obstacles=[], self_collisions=True,
                                        disabled_collisions=self._disabled_links,
                                        algorithm='rrt')
@@ -115,7 +116,7 @@ class Tahoma:
         # plan motion
         print(f'start conf is {self.sim_joint_state}')
         print(f'end conf is {end_joint_state}')
-        path = plan_motion_from_to(robot, self._joint_indices, self.sim_joint_state, end_joint_state,
+        path = plan_motion_from_to(self._pb_robot, self._joint_indices, self.sim_joint_state, end_joint_state,
                                    obstacles=[], self_collisions=True,
                                    disabled_collisions=self._disabled_links,
                                    algorithm='rrt')
