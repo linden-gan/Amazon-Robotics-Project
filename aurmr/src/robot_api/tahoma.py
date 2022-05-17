@@ -25,8 +25,8 @@ POD = os.path.join(HERE, '..', 'robot_info', 'tahoma', 'pod1.urdf')
 
 PYBULLET_JOINT_INITIAL = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint',
-               'wrist_2_joint', 'wrist_3_joint']
+JOINT_NAMES = ['arm_shoulder_pan_joint', 'arm_shoulder_lift_joint', 'arm_elbow_joint', 'arm_wrist_1_joint',
+               'arm_wrist_2_joint', 'arm_wrist_3_joint']
 
 SELF_COLLISION_DISABLED_LINKS = [  # change /////////////////////////////////////////////////////////////////////
         ('stand', 'base_link_inertia'), ('stand', 'shoulder_link'), ('stand', 'upper_arm_link'),
@@ -52,40 +52,31 @@ class Tahoma:
 
         # initialize arm meta info
         self._joint_indices = pp.joints_from_names(self._pb_robot, JOINT_NAMES)
-        self._disabled_links = pp.get_disabled_collisions(self._pb_robot, SELF_COLLISION_DISABLED_LINKS)
+        self._disabled_links = pp.get_disabled_collisions(self._pb_robot, JOINT_NAMES)  #######################
 
         # initialize joint state in simulator
-        self.sim_joint_state = initial_joint_state
+        self.sim_joint_state = p.getJointStates(self._pb_robot, self._joint_indices)[0]
         # initialize joint state of actual robot
         self.actual_joint_state = None
 
-        # listen to robot's joint state
+        # listen to robot's actual joint state
         self._robot_state_sub = rospy.Subscriber(ACTUAL_STATE_TOPIC, JointState, callback=self.get_actual_state)
-
         # initialize action client to move robot's arm
         self._trajectory_client = actionlib.SimpleActionClient(JOINT_ACTION_SERVER, FollowJointTrajectoryAction)
 
-        sleep(1)
+        while self.actual_joint_state is None:
+            pass
 
         # synchronize pybullet simulator's initial pose to actual robot if actual state is not
         # equal to simulator's state
-        if initial_joint_state != PYBULLET_JOINT_INITIAL:  # Threshold!
-            path = plan_motion_from_to(self._pb_robot, self._joint_indices, PYBULLET_JOINT_INITIAL, initial_joint_state,
-                                       obstacles=[], self_collisions=True,
-                                       disabled_collisions=self._disabled_links,
-                                       algorithm='rrt')
-            if path is None:
-                cprint('Bad initial joint state', 'red')
-                return
-            sim_execute_motion(self._pb_robot, self._joint_indices, path)
+        self.synchronize()
 
     def get_actual_state(self, msg: JointState):
         self.actual_joint_state = msg.position
 
     def synchronize(self):
-        # synchronize pybullet simulator's initial pose to actual robot if actual state is not
-        # equal to simulator's state
-        accurate = state_all_close(self.actual_joint_state.copy(), self.sim_joint_state.copy())
+        # synchronize simulator's states to actual states
+        accurate = state_all_close(self.actual_joint_state, self.sim_joint_state)
 
         if not accurate:
             path = plan_motion_from_to(self._pb_robot, self._joint_indices, self.sim_joint_state, self.actual_joint_state,
@@ -148,7 +139,7 @@ class Tahoma:
 
         # cprint('Failed to move actual robot', 'red')
         self.synchronize()
-        return state_all_close(self.actual_joint_state.copy(), end_joint_state)
+        return state_all_close(self.actual_joint_state, end_joint_state)
 
 
 def state_all_close(state1: list, state2: list):
