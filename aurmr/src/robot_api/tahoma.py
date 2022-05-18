@@ -3,7 +3,7 @@
 import rospy
 import actionlib
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectoryResult, FollowJointTrajectoryFeedback
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 
@@ -36,9 +36,10 @@ SELF_COLLISION_DISABLED_LINKS = [  # change ////////////////////////////////////
 
 # joint server on actual robot
 JOINT_ACTION_SERVER = '/pos_joint_traj_controller/follow_joint_trajectory'
-
 # topic about robot's current actual state
 ACTUAL_STATE_TOPIC = "sensor_msgs/JointState"
+# topic about robot's gripper pose
+ACTUAL_END_POSE = ""
 
 THRESHOLD = 0.1
 
@@ -55,16 +56,20 @@ class Tahoma:
         self._disabled_links = pp.get_disabled_collisions(self._pb_robot, JOINT_NAMES)  #######################
 
         # initialize joint state in simulator
-        self.sim_joint_state = p.getJointStates(self._pb_robot, self._joint_indices)[0]
+        self._sim_joint_state = p.getJointStates(self._pb_robot, self._joint_indices)[0]
         # initialize joint state of actual robot
-        self.actual_joint_state = None
+        self._actual_joint_state = None
+        # # initialize end effector pose of actual robot
+        # self._actual_end_pose = None
 
         # listen to robot's actual joint state
         self._robot_state_sub = rospy.Subscriber(ACTUAL_STATE_TOPIC, JointState, callback=self.get_actual_state)
+        # # listen to robot's actual end effector's pose
+        # self._gripper_pose_sub = rospy.Subscriber(ACTUAL_END_POSE, PoseStamped, callback=self.get_actual_end_pose)
         # initialize action client to move robot's arm
         self._trajectory_client = actionlib.SimpleActionClient(JOINT_ACTION_SERVER, FollowJointTrajectoryAction)
 
-        while self.actual_joint_state is None:
+        while self._actual_joint_state is None:
             pass
 
         # synchronize pybullet simulator's initial pose to actual robot if actual state is not
@@ -72,14 +77,17 @@ class Tahoma:
         self.synchronize()
 
     def get_actual_state(self, msg: JointState):
-        self.actual_joint_state = msg.position
+        self._actual_joint_state = msg.position
+
+    # def get_actual_end_pose(self, msg: PoseStamped):
+    #     self._actual_end_pose = msg.pose
 
     def synchronize(self):
         # synchronize simulator's states to actual states
-        accurate = state_all_close(self.actual_joint_state, self.sim_joint_state)
+        accurate = all_close(self._actual_joint_state, self._sim_joint_state, THRESHOLD)
 
         if not accurate:
-            path = plan_motion_from_to(self._pb_robot, self._joint_indices, self.sim_joint_state, self.actual_joint_state,
+            path = plan_motion_from_to(self._pb_robot, self._joint_indices, self._sim_joint_state, self._actual_joint_state,
                                        obstacles=[], self_collisions=True,
                                        disabled_collisions=self._disabled_links,
                                        algorithm='rrt')
@@ -89,7 +97,7 @@ class Tahoma:
 
             sim_execute_motion(self._pb_robot, self._joint_indices, path)
             # update initialized joint state
-            self.sim_joint_state = path[-1]
+            self._sim_joint_state = path[-1]
 
     def move_to_pose_goal(self,
                           end_pose: PoseStamped,
@@ -105,9 +113,9 @@ class Tahoma:
                                                        position, orien)
 
         # plan motion
-        print(f'start conf is {self.sim_joint_state}')
+        print(f'start conf is {self._sim_joint_state}')
         print(f'end conf is {end_joint_state}')
-        path = plan_motion_from_to(self._pb_robot, self._joint_indices, self.sim_joint_state, end_joint_state,
+        path = plan_motion_from_to(self._pb_robot, self._joint_indices, self._sim_joint_state, end_joint_state,
                                    obstacles=[], self_collisions=True,
                                    disabled_collisions=self._disabled_links,
                                    algorithm='rrt')
@@ -139,13 +147,14 @@ class Tahoma:
 
         # cprint('Failed to move actual robot', 'red')
         self.synchronize()
-        return state_all_close(self.actual_joint_state, end_joint_state)
+        # change to comparing goal and actual pose
+        return all_close(self._actual_joint_state, end_joint_state, THRESHOLD)
 
 
-def state_all_close(state1: list, state2: list):
+def all_close(state1: list, state2: list, threshold):
     assert len(state1) == len(state2)
     for i in range(len(state)):
-        if abs(state1[i] - state2[i]) > THRESHOLD:
+        if abs(state1[i] - state2[i]) > threshold:
             return False
     return True
 
