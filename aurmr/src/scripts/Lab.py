@@ -10,7 +10,7 @@ import numpy as np
 
 HERE = os.path.dirname(__file__)
 # ROBOT_URDF = os.path.join(HERE, 'robot_info', 'robot.urdf')
-ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'robot_with_stand.urdf')
+ROBOT_URDF = os.path.join(HERE, '..', 'robot_info', 'simple_arm', 'robot_with_stand.urdf')
 
 X = 0.5
 Y = 1.0
@@ -65,6 +65,8 @@ def move_test(robot, joint_indices, pose0, orien0, pose1, orien1,
     pp.wait_for_user()
 
     # move gripper to desired ending position
+    print('j_i', joint_indices)
+    print('pose1', pose1, 'orien1', orien1,)
     move_gripper_to(robot, joint_indices, pose1, orien1, [block2], self_collision_links, debug=debug)
     pp.wait_for_user()
 

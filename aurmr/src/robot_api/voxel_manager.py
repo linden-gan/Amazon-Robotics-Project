@@ -14,7 +14,7 @@ import rospy
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2
 
-import move
+from aurmr.src.robot_api import move
 
 HERE = os.path.dirname(__file__)  # TODO
 

@@ -7,8 +7,8 @@ import pybullet_planning as pp
 
 HERE = os.path.dirname(__file__)
 
-ROBOT = os.path.join(HERE, '..', 'robot_info', 'tahoma', 'tahoma.urdf')
-POD = os.path.join(HERE, '..', 'robot_info', 'tahoma', 'pod1.urdf')
+ROBOT = os.path.join(HERE, '..', 'robot_info', 'tahoma_info', 'tahoma_info.urdf')
+POD = os.path.join(HERE, '..', 'robot_info', 'tahoma_info', 'pod1.urdf')
 
 JOINT_NAMES = ['arm_shoulder_pan_joint', 'arm_shoulder_lift_joint', 'arm_elbow_joint', 'arm_wrist_1_joint',
                'arm_wrist_2_joint', 'arm_wrist_3_joint']

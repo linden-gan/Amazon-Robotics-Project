@@ -14,7 +14,7 @@ import pybullet_planning as pp
 import os
 from termcolor import cprint
 
-from move import plan_motion_from_to, sim_execute_motion
+from aurmr.src.robot_api.move import plan_motion_from_to, sim_execute_motion
 
 HERE = os.path.dirname(__file__)
 
