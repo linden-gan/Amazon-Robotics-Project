@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+from ntpath import join
 import rospy
 import actionlib
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectoryResult, FollowJointTrajectoryFeedback
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal, FollowJointTrajectoryResult, \
+    FollowJointTrajectoryFeedback, JointTolerance
 from geometry_msgs.msg import PoseStamped, Pose
 from trajectory_msgs.msg import JointTrajectoryPoint
 from sensor_msgs.msg import JointState
@@ -14,19 +16,17 @@ import pybullet_planning as pp
 
 import os
 from termcolor import cprint
+import time
 
 # [-2.465935500321586, -0.3614325767215414, 1.2921673670941827, 0.14091580293729233, -0.03903485799066875, -0.46069111706169075, 0.2890467944762829]
-
 
 HERE = os.path.dirname(__file__)
 
 ROBOT = os.path.join(HERE, 'tahoma_info', 'tahoma.urdf')
 POD = os.path.join(HERE, 'tahoma_info', 'pod1.urdf')
 
-PYBULLET_JOINT_INITIAL = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-JOINT_NAMES = ['arm_shoulder_pan_joint', 'arm_shoulder_lift_joint', 'arm_elbow_joint', 'arm_wrist_1_joint',
-               'arm_wrist_2_joint', 'arm_wrist_3_joint'] #, 'gripper_finger_joint'
+JOINT_NAMES = ['arm_elbow_joint', 'arm_shoulder_lift_joint', 'arm_shoulder_pan_joint', 'arm_wrist_1_joint',
+               'arm_wrist_2_joint', 'arm_wrist_3_joint']  # , 'gripper_finger_joint'
 GRIPPER = 'gripper_robotiq_arg2f_base_link'
 
 # SELF_COLLISION_DISABLED_LINKS = [  # change /////////////////////////////////////////////////////////////////////
@@ -34,9 +34,14 @@ GRIPPER = 'gripper_robotiq_arg2f_base_link'
 #         ('base_link_inertia', 'shoulder_link'), ('shoulder_link', 'upper_arm_link'),
 #         ('upper_arm_link', 'forearm_link'), ('forearm_link', 'wrist_1_link'), ('wrist_1_link', 'wrist_2_link'),
 #         ('wrist_2_link', 'wrist_3_link')]
-SELF_COLLISION_DISABLED_LINKS = [('stand', 'arm_base_link_inertia'), ('stand', 'arm_shoulder_link'), ('stand', 'arm_upper_arm_link'),
-                                 ('arm_base_link_inertia', 'arm_shoulder_link'), ('arm_shoulder_link', 'arm_upper_arm_link'),
-                                 ('arm_upper_arm_link', 'arm_forearm_link'), ('arm_forearm_link', 'arm_wrist_1_link'), ('arm_wrist_1_link', 'arm_wrist_2_link'),
+SELF_COLLISION_DISABLED_LINKS = [('stand', 'arm_base_link_inertia'),
+                                 ('stand', 'arm_shoulder_link'),
+                                 ('stand', 'arm_upper_arm_link'),
+                                 ('arm_base_link_inertia', 'arm_shoulder_link'),
+                                 ('arm_shoulder_link', 'arm_upper_arm_link'),
+                                 ('arm_upper_arm_link', 'arm_forearm_link'),
+                                 ('arm_forearm_link', 'arm_wrist_1_link'),
+                                 ('arm_wrist_1_link', 'arm_wrist_2_link'),
                                  ('arm_wrist_2_link', 'arm_wrist_3_link')]
 
 # joint server on actual robot
@@ -46,7 +51,9 @@ ACTUAL_STATE_TOPIC = "/joint_states"
 # # topic about robot's gripper pose
 # ACTUAL_END_POSE = ""
 
-THRESHOLD = 0.1
+THRESHOLD = 0.05
+
+REAL_TIME_STAMP = 0.1
 
 
 class Tahoma:
@@ -54,11 +61,13 @@ class Tahoma:
         # initialize robot in pybullet
         p.connect(p.GUI)
         self._pod = p.loadURDF(POD)
-        self._pb_robot = p.loadURDF(ROBOT, basePosition=[0,-1,0])
+        self._pb_robot = p.loadURDF(ROBOT, basePosition=[0.5, -0.6, 0],
+                                    baseOrientation=[0, 0, 1, 1])  # ask Collin about this
 
         # initialize arm meta info
         self._joint_indices = pp.joints_from_names(self._pb_robot, JOINT_NAMES)
-        self._disabled_links = pp.get_disabled_collisions(self._pb_robot, SELF_COLLISION_DISABLED_LINKS)  #######################
+        self._disabled_links = pp.get_disabled_collisions(self._pb_robot,
+                                                          SELF_COLLISION_DISABLED_LINKS)  #######################
 
         # initialize joint state of actual robot
         self._actual_joint_state = None
@@ -75,10 +84,8 @@ class Tahoma:
         while self._actual_joint_state is None:
             pass
 
-        # synchronize pybullet simulator's initial pose to actual robot if actual state is not
-        # equal to simulator's state
+        # synchronize pybullet simulator's initial pose to actual robot's
         self.synchronize()
-        pp.set_joint_positions(self._pb_robot, self._joint_indices, self._actual_joint_state)
 
     def get_actual_state(self, msg: JointState):
         self._actual_joint_state = msg.position[:6]
@@ -88,13 +95,14 @@ class Tahoma:
 
     def synchronize(self):
         # synchronize simulator's states to actual states
-        #print(f'actual conf is {self._actual_joint_state}')
+        pp.wait_for_duration(REAL_TIME_STAMP * 10)
+        cprint(f'Inside synchronize: actual joint states are {self._actual_joint_state}', "yellow")
         pp.set_joint_positions(self._pb_robot, self._joint_indices, self._actual_joint_state)
 
     def move_to_pose_goal(self,
                           end_pose: PoseStamped,
                           max_plan_time=10.0,
-                          execution_timeout=15,
+                          execution_timeout=150,
                           tolerance=0.01,
                           orientation_constraint=None):
         self.synchronize()
@@ -102,46 +110,57 @@ class Tahoma:
         position = [end_pose.pose.position.x, end_pose.pose.position.y, end_pose.pose.position.z]
         orien = [end_pose.pose.orientation.x, end_pose.pose.orientation.y,
                  end_pose.pose.orientation.z, end_pose.pose.orientation.w]
+        mark_target(position)
         end_joint_state = p.calculateInverseKinematics(self._pb_robot, pp.link_from_name(self._pb_robot, GRIPPER),
                                                        position, orien)
-        cprint("!!!!!!!!!!!!!!!!!!!!!!", 'cyan')
-        # print(end_joint_state)
+        end_joint_state = [-2.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         # plan motion
-        # end_joint_state = end_joint_state[0:len(self._joint_indices)]
         path = plan_motion_from_to(self._pb_robot, self._joint_indices, self._actual_joint_state, end_joint_state,
                                    obstacles=[], self_collisions=True,
                                    disabled_collisions=self._disabled_links,
                                    algorithm='rrt')
-        #print(f'path is {path}')
+        print(f'path is {path}')
 
         if path is None:
-            cprint('No path found', 'red')
-            return
+            cprint('Pybullet cannot find any path...', 'red')
+            self.synchronize()
+            return False
 
-        # execute path in pybullet
+        # meanwhile, move arm in pybullet sim
         sim_execute_motion(self._pb_robot, self._joint_indices, path)
 
         # make goal
         goal = FollowJointTrajectoryGoal()
+        # for trajectory
         goal.trajectory.joint_names = JOINT_NAMES
         goal.trajectory.points = to_joint_trajectory_point(path)
-        goal.path_tolerance = [0.009]*6
-        goal.goal_tolerance
+        # for tolerance
+        goal.path_tolerance = to_joint_tolerance(tolerance)
+        goal.goal_tolerance = to_joint_tolerance(tolerance)
+        # for goal_time_tolerance
+        goal.goal_time_tolerance = rospy.Duration(10 * REAL_TIME_STAMP)
         # send goal
         self._trajectory_client.send_goal(goal)
-        self._trajectory_client.wait_for_result(rospy.Duration(execution_timeout))
-        # return result
+        cprint("Sent this goal", 'yellow')
+        # wait to get result
+        start = time.time()
+        self._trajectory_client.wait_for_result(rospy.Duration.from_sec(execution_timeout))
+        # get result
+        wait_end = time.time()
+        cprint(f'wait ends at {wait_end}', 'blue')
         result = self._trajectory_client.get_result()
-        if result is not None:
-            cprint(f'error code is {result.error_code}', 'cyan')
-            cprint(f'error string {result.error_string}', 'cyan')
-            if result.error_code == 0:
-                # update current joint state
-                self.synchronize()
-                return True
-
-        # cprint('Failed to move actual robot', 'red')
+        after_get = time.time()
+        cprint(f'after get at {after_get}', 'cyan')
         self.synchronize()
+        if result is not None:
+            if result.error_code == 0:
+                cprint('SUCCESS!', 'cyan')
+                return True
+            else:
+                cprint(f'FAILURE: error string is {result.error_string}', 'red')
+                return False
+
+        cprint("Got no result", 'yellow')
 
         # change to comparing goal and actual pose
         return all_close(self._actual_joint_state, end_joint_state, THRESHOLD)
@@ -161,9 +180,30 @@ def to_joint_trajectory_point(waypoints):
     """
     res = []
     for i, point in enumerate(waypoints):
-        dur = rospy.Duration(i*0.1)
+        dur = rospy.Duration(i * REAL_TIME_STAMP)
         res.append(JointTrajectoryPoint(positions=point, time_from_start=dur))
     return res
+
+
+def to_joint_tolerance(joint_tol):
+    """
+    transform a tolerance float value to a list of JointTolerance objects.
+    for simplicity, we set all joints' position, velocity, and acceleration to the same tolerance value.
+    """
+    res = []
+    for i in range(6):
+        obj = JointTolerance()
+        obj.position = joint_tol
+        obj.velocity = joint_tol
+        obj.acceleration = joint_tol
+        obj.name = JOINT_NAMES[i]
+        res.append(obj)
+    return res
+
+
+def mark_target(position: list):
+    target = pp.create_box(0.1, 0.1, 0.1)
+    pp.set_pose(target, pp.Pose(pp.Point(x=position[0], y=position[1], z=position[2])))
 
 
 def sim_execute_motion(robot, joint_indices, path):
