@@ -1,9 +1,0 @@
-# goal
-Point position
-Quaternion orientation
----
-# result
-uint32 success
----
-# feedback
-float32 percent_complete

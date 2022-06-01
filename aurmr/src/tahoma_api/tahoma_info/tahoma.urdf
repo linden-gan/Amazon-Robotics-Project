@@ -607,8 +607,8 @@
     <visual>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.176"/>
       <geometry>
-        <!--mesh filename="package://ur_description/meshes/ur16e/visual/upperarm.dae"/-->
-        <box size="0.3 0.3 0.3"/>
+        <!-- mesh filename="package://ur_description/meshes/ur16e/visual/upperarm.dae"/ -->
+        <box size="0.1 0.1 0.1"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -953,7 +953,7 @@
     <child link="gripper_left_outer_finger"/>
     <axis xyz="1 0 0"/>
   </joint>
-  <joint name="gripper_left_inner_knuckle_joint" type="revolute">
+  <joint name="gripper_left_inner_knuckle_joint" type="fixed">
     <!-- <origin xyz="0 ${reflect * -0.0127} 0.06142" rpy="${pi / 2 + .725} 0 ${(reflect - 1) * pi / 2}" /> -->
     <origin rpy="0 0 3.141592653589793" xyz="0 -0.0127 0.06142"/>
     <parent link="gripper_robotiq_arg2f_base_link"/>
@@ -962,7 +962,7 @@
     <limit effort="1000" lower="0" upper="0.8757" velocity="0.5"/>
     <mimic joint="gripper_finger_joint" multiplier="1" offset="0"/>
   </joint>
-  <joint name="gripper_left_inner_finger_joint" type="revolute">
+  <joint name="gripper_left_inner_finger_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0.0061 0.0471"/>
     <parent link="gripper_left_outer_finger"/>
     <child link="gripper_left_inner_finger"/>
@@ -976,7 +976,7 @@
     <child link="gripper_left_inner_finger_pad"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <joint name="gripper_finger_joint" type="revolute">
+  <joint name="gripper_finger_joint" type="fixed">
     <origin rpy="0 0 3.141592653589793" xyz="0 -0.0306011 0.054904"/>
     <parent link="gripper_robotiq_arg2f_base_link"/>
     <child link="gripper_left_outer_knuckle"/>
@@ -989,7 +989,7 @@
     <child link="gripper_right_outer_finger"/>
     <axis xyz="1 0 0"/>
   </joint>
-  <joint name="gripper_right_inner_knuckle_joint" type="revolute">
+  <joint name="gripper_right_inner_knuckle_joint" type="fixed">
     <!-- <origin xyz="0 ${reflect * -0.0127} 0.06142" rpy="${pi / 2 + .725} 0 ${(reflect - 1) * pi / 2}" /> -->
     <origin rpy="0 0 0.0" xyz="0 0.0127 0.06142"/>
     <parent link="gripper_robotiq_arg2f_base_link"/>
@@ -998,7 +998,7 @@
     <limit effort="1000" lower="0" upper="0.8757" velocity="0.5"/>
     <mimic joint="gripper_finger_joint" multiplier="1" offset="0"/>
   </joint>
-  <joint name="gripper_right_inner_finger_joint" type="revolute">
+  <joint name="gripper_right_inner_finger_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0.0061 0.0471"/>
     <parent link="gripper_right_outer_finger"/>
     <child link="gripper_right_inner_finger"/>
@@ -1120,7 +1120,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="gripper_right_finger_joint" type="revolute">
+  <joint name="gripper_right_finger_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0.0306011 0.054904"/>
     <parent link="gripper_robotiq_arg2f_base_link"/>
     <child link="gripper_right_outer_knuckle"/>
