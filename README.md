@@ -6,7 +6,7 @@ This is a pybullet interface for moving robot to given waypoints.
 ```
 git clone https://github.com/linden-gan/Amazon-Robotics-Project.git
 ```
-repo must be cloned under the **common directory** under the aurmr_tahoma repo: aurmr_tahoma/aurmr_task/src/common
+repo must be cloned under the **common directory** of the aurmr_tahoma repo: aurmr_tahoma/aurmr_task/src/common
 
 ## Usage
 ### Prereq for Usage
