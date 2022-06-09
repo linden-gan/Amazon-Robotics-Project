@@ -9,7 +9,7 @@ git clone https://github.com/linden-gan/Amazon-Robotics-Project.git
 This repo must be cloned under the **common directory** of the aurmr_tahoma repo: ```aurmr_tahoma/aurmr_task/src/common```
 
 ## pb_tahoma vs. real_tahoma
-
+**NOTE:** 
 
 ## Usage
 ### Prereq for Usage
@@ -95,7 +95,7 @@ outcome = sm.execute()
 rospy.spin()
 sis.stop()
 ```
-**Note:** In this example, the Tahoma object ```robot``` we created is passed to ```motion.MoveEndEffectorToPose(robot)```. ```robot.move_to_pose_goal(pose)``` is called inside ```motion.MoveEndEffectorToPose()```.
+**NOTE:** In this example, the Tahoma object ```robot``` we created is passed to ```motion.MoveEndEffectorToPose(robot)```. ```robot.move_to_pose_goal(pose)``` is called inside ```motion.MoveEndEffectorToPose()```.
 
 
 ## Video Demonstration
