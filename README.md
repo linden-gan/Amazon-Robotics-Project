@@ -39,7 +39,7 @@ This function takes in an end-effector pose and moves the end-effector of both s
 - ```tolerance:float, defualt=0.01```
 - ```orientation_constraint:float, default=None```
 
-##### Return
+#### Return
 - ```True``` if the actual robot is sucessfully moved to the desired end-effector pose.
 - ```False``` if no valid path is found by pybullet planning, or the actual robot fails to execute the provided trajectory.
 
@@ -62,7 +62,7 @@ from tf_conversions import transformations
 # This is a list of desired waypoints with type PoseStamped that users need to create and modify
 WAYPOINTS
 
-# 需要init node吗？？？？？？？？？？？？？？？？？？？？？
+rospy.init_node("move_arm_demo")  # Users can change this node name
 robot = Tahoma()
 
 simulation = rospy.get_param("~simulation", False)
@@ -96,5 +96,6 @@ rospy.spin()
 sis.stop()
 ```
 **Note:** In this example, the Tahoma object ```robot``` we created is passed to ```motion.MoveEndEffectorToPose(robot)```. ```robot.move_to_pose_goal(pose)``` is called inside ```motion.MoveEndEffectorToPose()```.
+
 
 ## Video Demonstration
