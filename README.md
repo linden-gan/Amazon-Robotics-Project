@@ -33,11 +33,11 @@ move_to_pose_goal(self, end_pose: PoseStamped, max_plan_time=10.0, execution_tim
 This function takes in an end-effector pose and moves the end-effector of both simulation robot and actual robot to the desired pose within some tolerance. It will first synchronize the similutation robot with the actual robot and sample paths in simulation environment and send goal to the actual robot.
 
 #### Parameters
-- ```end_pose:PoseStamped```
-- ```max_plan_time:float, default=10.0``` 
-- ```execution_timeout:float, default=15```
-- ```tolerance:float, defualt=0.01```
-- ```orientation_constraint:float, default=None```
+- ```end_pose:geometry_msgs/PoseStamped``` The desired pose of end-effector.
+- ```max_plan_time:float, default=10.0``` The maximum allowed trajectory planning time for pybulley planning.
+- ```execution_timeout:float, default=15``` The maximum allowed time to wait for the real robot to execute the planned trajectory.
+- ```tolerance:float, defualt=0.01``` The tolerance of joint angles in rad.
+- ```orientation_constraint:moveit_msgs/OrientationConstraint, default=None```  An orientation constraint for the entire trajectory.
 
 #### Return
 - ```True``` if the actual robot is sucessfully moved to the desired end-effector pose.
