@@ -6,7 +6,7 @@ This is a pybullet interface for motion planning to move robot to a desired end 
 ```
 git clone https://github.com/linden-gan/Amazon-Robotics-Project.git
 ```
-This repo must be cloned under the **common directory** of the aurmr_tahoma repo: aurmr_tahoma/aurmr_task/src/common
+This repo must be cloned under the **common directory** of the aurmr_tahoma repo: ```aurmr_tahoma/aurmr_task/src/common```
 
 ## Usage
 ### Prereq for Usage
