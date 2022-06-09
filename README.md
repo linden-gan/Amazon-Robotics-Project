@@ -1,6 +1,6 @@
 # Amazon-Robotics-Project
 
-This is a pybullet interface for motion planning to move robot to a desired end pose.
+This is a motion planning library to move robot arm to desired end poses.
 
 ## Download
 ```
