@@ -4,22 +4,31 @@ This is a motion library to move robot arm to desired end poses.
 
 We use Pybullet to achieve motion planning as well as collision checking. To overcome the low-granularity of the path returned by original Pybullet library function, we tweak the algorithm so that it now always returns paths with high-granularity.
 
+Here is the structure of this project:
+
 ```
-3D: directory for any additional, user-defined 3D model
-aurmr/src: a ROS package containing the whole motion library
-    robot_api: a prototype api, 
+3D                        --- directory for any additional, user-defined 3D model
+aurmr/src/                --- a ROS package containing the whole motion library/
+    robot_api             --- a prototype api that has no practical purpose, but a demo of how to use Pybullet for motion planning
+    robot_info            --- urdf, mesh, and other meta data for robots in robot_api
+    scripts               --- directory for all demo scripts
+    tahoma_api/           --- an api that can control the tahoma robot
+        tahoma_info       --- urdf, mesh, and other meta data for tahoma robot
+        pb_tahoma.py      --- a class that controls robot in gazebo
+        real_tahoma.py    --- a class that controls the real robot
+                              The reason to have 2 classes is real robot uses different topics and other parameters than the 
+                              gazebo version. Having 2 "redundant" files actually makes things easier.
 ```
 
 **NOTE:** This repo is designed for the robot in Amazon Picking Challenge, an ongoing research project in Sensor System Lab in University of Washington. If you directly download this repo for other robot, it may not be compatible. Please see **Usage** section if you need modify any parameters.
+
+## Video Demonstration
 
 ## Download
 ```
 git clone https://github.com/linden-gan/Amazon-Robotics-Project.git
 ```
-This repo must be cloned under the **common directory** of the aurmr_tahoma repo: ```aurmr_tahoma/aurmr_task/src/common```
-
-## pb_tahoma vs. real_tahoma
-**NOTE:** 
+This repo must be cloned under the **common directory** of the aurmr_tahoma repo: ```aurmr_tahoma/aurmr_task/src/common``` 
 
 ## Usage
 ### Prereq for Usage
@@ -106,6 +115,3 @@ rospy.spin()
 sis.stop()
 ```
 **NOTE:** In this example, the Tahoma object ```robot``` we created is passed to ```motion.MoveEndEffectorToPose(robot)```. ```robot.move_to_pose_goal(pose)``` is called inside ```motion.MoveEndEffectorToPose()```.
-
-
-## Video Demonstration
