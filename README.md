@@ -24,6 +24,8 @@ aurmr/src/                --- a ROS package containing the whole motion library/
 
 ## Video Demonstration
 
+Welcome to checkout our video demonstration [HERE](https://youtu.be/GZF41x6FVtA)!
+
 ## Download
 ```
 git clone https://github.com/linden-gan/Amazon-Robotics-Project.git
