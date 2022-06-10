@@ -1,4 +1,4 @@
-# Amazon-Robotics-Project
+# pybullet-motion-plan
 
 This is a motion library to move robot arm to desired end poses.
 
