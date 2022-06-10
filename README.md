@@ -110,7 +110,7 @@ with sm:
 
 sis = smach_ros.IntrospectionServer('pick_sm', sm, '/pick')
 sis.start()
-
+ 
 outcome = sm.execute()
 
 rospy.spin()
