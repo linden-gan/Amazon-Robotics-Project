@@ -24,7 +24,9 @@ aurmr/src/                --- a ROS package containing the whole motion library/
 
 ## Video Demonstration
 Welcome to checkout our video demonstration [HERE](https://youtu.be/GZF41x6FVtA)!
-https://user-images.githubusercontent.com/73861239/173129154-99c651e2-c2b7-4f29-9a9f-2e11b5489324.mp4
+
+[![demo](http://img.youtube.com/vi/GZF41x6FVtA/0.jpg)](https://youtu.be/GZF41x6FVtA)
+
 
 ## Download
 ```
