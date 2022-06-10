@@ -23,8 +23,8 @@ aurmr/src/                --- a ROS package containing the whole motion library/
 **NOTE:** This repo is designed for the robot in Amazon Picking Challenge, an ongoing research project in Sensor System Lab in University of Washington. If you directly download this repo for other robot, it may not be compatible. Please see **Usage** section if you need modify any parameters.
 
 ## Video Demonstration
-
 Welcome to checkout our video demonstration [HERE](https://youtu.be/GZF41x6FVtA)!
+https://user-images.githubusercontent.com/73861239/173129154-99c651e2-c2b7-4f29-9a9f-2e11b5489324.mp4
 
 ## Download
 ```
