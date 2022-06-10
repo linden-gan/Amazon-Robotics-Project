@@ -1,6 +1,16 @@
 # Amazon-Robotics-Project
 
-This is a motion planning library to move robot arm to desired end poses.
+This is a motion library to move robot arm to desired end poses.
+
+We use Pybullet to achieve motion planning as well as collision checking. To overcome the low-granularity of the path returned by original Pybullet library function, we tweak the algorithm so that it now always returns paths with high-granularity.
+
+```
+3D: directory for any additional, user-defined 3D model
+aurmr/src: a ROS package containing the whole motion library
+    robot_api: a prototype api, 
+```
+
+**NOTE:** This repo is designed for the robot in Amazon Picking Challenge, an ongoing research project in Sensor System Lab in University of Washington. If you directly download this repo for other robot, it may not be compatible. Please see **Usage** section if you need modify any parameters.
 
 ## Download
 ```
